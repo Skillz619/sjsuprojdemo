@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mailflow - AI Email Organizer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a24;
+            --bg-card: #16161f;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-glow: rgba(99, 102, 241, 0.4);
+            --text-primary: #f4f4f5;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --border-color: rgba(255, 255, 255, 0.06);
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 20%, rgba(99, 102, 241, 0.15), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(129, 140, 248, 0.1), transparent),
+                radial-gradient(ellipse 50% 30% at 50% 50%, rgba(99, 102, 241, 0.05), transparent);
+        }
+
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        /* Login Page */
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .login-container {
+            text-align: center;
+            padding: 3rem;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .logo-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 32px var(--accent-glow);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 8px 32px var(--accent-glow); }
+            50% { box-shadow: 0 8px 48px var(--accent-glow), 0 0 60px rgba(99, 102, 241, 0.2); }
+        }
+
+        .logo-icon svg {
+            width: 28px;
+            height: 28px;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-weight: 300;
+        }
+
+        .tagline span {
+            color: var(--accent-secondary);
+            font-weight: 500;
+        }
+
+        .login-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 420px;
+            margin: 0 auto;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+        }
+
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+        }
+
+        .google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            width: 100%;
+            padding: 1rem 1.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .google-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .google-btn:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+        }
+
+        .google-btn:hover::before {
+            left: 100%;
+        }
+
+        .google-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .features-preview {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .feature-item {
+            text-align: center;
+            animation: fadeInUp 0.8s ease-out backwards;
+        }
+
+        .feature-item:nth-child(1) { animation-delay: 0.2s; }
+        .feature-item:nth-child(2) { animation-delay: 0.4s; }
+        .feature-item:nth-child(3) { animation-delay: 0.6s; }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-secondary);
+        }
+
+        .feature-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Dashboard */
+        .dashboard {
+            display: none;
+            min-height: 100vh;
+            position: relative;
+            z-index: 2;
+        }
+
+        .dashboard.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-logo .logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+        }
+
+        .sidebar-logo .logo-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .sidebar-logo .logo-text {
+            font-size: 1.4rem;
+        }
+
+        .compose-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+
+        .compose-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--accent-glow);
+        }
+
+        .nav-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-section-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.75rem;
+            padding-left: 0.75rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent-secondary);
+        }
+
+        .nav-item svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        .nav-item-text {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .nav-item-count {
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: var(--bg-tertiary);
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .nav-item.active .nav-item-count {
+            background: rgba(99, 102, 241, 0.3);
+        }
+
+        .category-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .user-profile:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-email {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .logout-btn {
+            padding: 0.5rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            padding: 1.5rem 2rem;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-container {
+            flex: 1;
+            max-width: 600px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.875rem 1rem 0.875rem 3rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            width: 18px;
+            height: 18px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-btn {
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .header-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .header-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* AI Banner */
+        .ai-banner {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(129, 140, 248, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .ai-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .ai-icon svg {
+            width: 22px;
+            height: 22px;
+            color: white;
+        }
+
+        .ai-content {
+            flex: 1;
+        }
+
+        .ai-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .ai-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .ai-action {
+            padding: 0.625rem 1.25rem;
+            background: var(--accent-primary);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .ai-action:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-1px);
+        }
+
+        /* Email List */
+        .email-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .email-section-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .email-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .email-action-btn {
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .email-action-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .email-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .email-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .email-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 3px;
+            height: 100%;
+            background: transparent;
+            transition: background 0.2s ease;
+        }
+
+        .email-item:hover {
+            background: var(--bg-tertiary);
+            border-color: rgba(99, 102, 241, 0.3);
+            transform: translateX(4px);
+        }
+
+        .email-item:hover::before {
+            background: var(--accent-primary);
+        }
+
+        .email-item.unread {
+            background: var(--bg-card);
+        }
+
+        .email-item.unread .email-sender {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .email-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border-color);
+            border-radius: 5px;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-top: 0.2rem;
+            transition: all 0.2s ease;
+        }
+
+        .email-checkbox:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .email-checkbox.checked {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .email-star {
+            color: var(--text-muted);
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-top: 0.2rem;
+            transition: color 0.2s ease;
+        }
+
+        .email-star:hover,
+        .email-star.starred {
+            color: var(--warning);
+        }
+
+        .email-star svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .email-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .email-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .email-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.35rem;
+        }
+
+        .email-sender {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .email-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .email-subject {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.35rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .email-preview {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .email-tags {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .email-tag {
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .email-tag.important {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+
+        .email-tag.work {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent-secondary);
+        }
+
+        .email-tag.personal {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+        }
+
+        .email-tag.newsletter {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+        }
+
+        .email-tag.social {
+            background: rgba(236, 72, 153, 0.15);
+            color: #f472b6;
+        }
+
+        /* Loading State */
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            color: var(--text-muted);
+        }
+
+        .empty-icon svg {
+            width: 36px;
+            height: 36px;
+        }
+
+        .empty-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-text {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            animation: toastIn 0.3s ease-out;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .toast-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .toast.success .toast-icon { color: var(--success); }
+        .toast.error .toast-icon { color: var(--danger); }
+        .toast.info .toast-icon { color: var(--info); }
+
+        .toast-message {
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 72px;
+                padding: 1rem 0.75rem;
+            }
+
+            .sidebar-logo .logo-text,
+            .nav-section-title,
+            .nav-item-text,
+            .nav-item-count,
+            .user-info,
+            .compose-btn span {
+                display: none;
+            }
+
+            .compose-btn {
+                padding: 0.875rem;
+            }
+
+            .user-profile {
+                justify-content: center;
+            }
+
+            .main-content {
+                margin-left: 72px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+
+            .ai-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .header {
+                flex-direction: column;
+            }
+
+            .search-container {
+                width: 100%;
+                max-width: none;
+            }
+        }
+
+        /* Hide elements */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+    <div class="noise-overlay"></div>
+
+    <!-- Login Page -->
+    <div class="login-page" id="loginPage">
+        <div class="login-container">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                </div>
+                <span class="logo-text">Mailflow</span>
+            </div>
+            <p class="tagline">Your inbox, <span>supercharged by AI</span></p>
+
+            <div class="login-card">
+                <h2 class="login-title">Welcome back</h2>
+                <p class="login-subtitle">Sign in to access your organized inbox</p>
+
+                <button class="google-btn" id="googleSignInBtn">
+                    <svg class="google-icon" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Continue with Google
+                </button>
+            </div>
+
+            <div class="features-preview">
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                    </div>
+                    <span class="feature-label">Smart Priority</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </div>
+                    <span class="feature-label">Auto Categorize</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                    </div>
+                    <span class="feature-label">AI Insights</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard" id="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                </div>
+                <span class="logo-text">Mailflow</span>
+            </div>
+
+            <button class="compose-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Compose</span>
+            </button>
+
+            <nav>
+                <div class="nav-section">
+                    <div class="nav-section-title">Mail</div>
+                    <div class="nav-item active" data-filter="inbox">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                            <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                        </svg>
+                        <span class="nav-item-text">Inbox</span>
+                        <span class="nav-item-count" id="inboxCount">0</span>
+                    </div>
+                    <div class="nav-item" data-filter="starred">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                        <span class="nav-item-text">Starred</span>
+                        <span class="nav-item-count" id="starredCount">0</span>
+                    </div>
+                    <div class="nav-item" data-filter="sent">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                        <span class="nav-item-text">Sent</span>
+                    </div>
+                    <div class="nav-item" data-filter="drafts">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <span class="nav-item-text">Drafts</span>
+                    </div>
+                    <div class="nav-item" data-filter="trash">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        <span class="nav-item-text">Trash</span>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Categories</div>
+                    <div class="nav-item" data-filter="important">
+                        <span class="category-dot" style="background: #ef4444;"></span>
+                        <span class="nav-item-text">Important</span>
+                        <span class="nav-item-count" id="importantCount">0</span>
+                    </div>
+                    <div class="nav-item" data-filter="work">
+                        <span class="category-dot" style="background: #6366f1;"></span>
+                        <span class="nav-item-text">Work</span>
+                        <span class="nav-item-count" id="workCount">0</span>
+                    </div>
+                    <div class="nav-item" data-filter="personal">
+                        <span class="category-dot" style="background: #22c55e;"></span>
+                        <span class="nav-item-text">Personal</span>
+                        <span class="nav-item-count" id="personalCount">0</span>
+                    </div>
+                    <div class="nav-item" data-filter="newsletter">
+                        <span class="category-dot" style="background: #f59e0b;"></span>
+                        <span class="nav-item-text">Newsletter</span>
+                        <span class="nav-item-count" id="newsletterCount">0</span>
+                    </div>
+                    <div class="nav-item" data-filter="social">
+                        <span class="category-dot" style="background: #ec4899;"></span>
+                        <span class="nav-item-text">Social</span>
+                        <span class="nav-item-count" id="socialCount">0</span>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <img src="" alt="Avatar" class="user-avatar" id="userAvatar">
+                    <div class="user-info">
+                        <div class="user-name" id="userName">User</div>
+                        <div class="user-email" id="userEmail">user@gmail.com</div>
+                    </div>
+                    <button class="logout-btn" id="logoutBtn" title="Sign out">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <div class="search-container">
+                    <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" class="search-input" placeholder="Search emails..." id="searchInput">
+                </div>
+                <div class="header-actions">
+                    <button class="header-btn" id="refreshBtn" title="Refresh">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <polyline points="1 20 1 14 7 14"></polyline>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                    </button>
+                    <button class="header-btn" title="Settings">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <div class="ai-banner">
+                <div class="ai-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a2 2 0 0 1 0 4h-1.27a7 7 0 0 1-4.73 4.73V23a2 2 0 0 1-4 0v-.27A7 7 0 0 1 7.27 18H6a2 2 0 0 1 0-4h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M10 16v-2a2 2 0 0 1 4 0v2a2 2 0 0 1-4 0"></path>
+                    </svg>
+                </div>
+                <div class="ai-content">
+                    <div class="ai-title">AI has organized your inbox</div>
+                    <div class="ai-subtitle">Emails are automatically categorized based on content and priority</div>
+                </div>
+                <button class="ai-action" id="organizeBtn">Organize Now</button>
+            </div>
+
+            <div class="email-section-header">
+                <span class="email-section-title" id="sectionTitle">All Emails</span>
+                <div class="email-actions">
+                    <button class="email-action-btn" id="selectAllBtn">Select All</button>
+                    <button class="email-action-btn">Mark as Read</button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading-container" id="loadingState">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Loading your emails...</div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state hidden" id="emptyState">
+                <div class="empty-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                </div>
+                <h3 class="empty-title">No emails found</h3>
+                <p class="empty-text">Your inbox is empty or no emails match your filter</p>
+            </div>
+
+            <!-- Email List -->
+            <div class="email-list hidden" id="emailList"></div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION - Add your Google API credentials here
+        // ============================================
+        const GOOGLE_CLIENT_ID = '992504995990-kcdc1543k49pn3fh8808ih6mck74pd91.apps.googleusercontent.com';
+        const GOOGLE_API_KEY = ''; // Not needed for OAuth flow
+        const SCOPES = 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
+
+        // ============================================
+        // STATE
+        // ============================================
+        let emails = [];
+        let currentFilter = 'inbox';
+        let tokenClient;
+        let gapiInited = false;
+        let gisInited = false;
+
+        // ============================================
+        // DOM ELEMENTS
+        // ============================================
+        const loginPage = document.getElementById('loginPage');
+        const dashboard = document.getElementById('dashboard');
+        const googleSignInBtn = document.getElementById('googleSignInBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const emailList = document.getElementById('emailList');
+        const loadingState = document.getElementById('loadingState');
+        const emptyState = document.getElementById('emptyState');
+        const searchInput = document.getElementById('searchInput');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const organizeBtn = document.getElementById('organizeBtn');
+        const navItems = document.querySelectorAll('.nav-item');
+        const sectionTitle = document.getElementById('sectionTitle');
+        const toastContainer = document.getElementById('toastContainer');
+
+        // ============================================
+        // GOOGLE API INITIALIZATION
+        // ============================================
+        function gapiLoaded() {
+            gapi.load('client', initializeGapiClient);
+        }
+
+        async function initializeGapiClient() {
+            await gapi.client.init({
+                discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest'],
+            });
+            gapiInited = true;
+            maybeEnableButton();
+        }
+
+        function gisLoaded() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: GOOGLE_CLIENT_ID,
+                scope: SCOPES,
+                callback: '', // defined later
+            });
+            gisInited = true;
+            maybeEnableButton();
+        }
+
+        function maybeEnableButton() {
+            if (gapiInited && gisInited) {
+                googleSignInBtn.disabled = false;
+            }
+        }
+
+        // ============================================
+        // AUTHENTICATION
+        // ============================================
+        function handleAuthClick() {
+            tokenClient.callback = async (resp) => {
+                if (resp.error !== undefined) {
+                    showToast('Authentication failed. Please try again.', 'error');
+                    return;
+                }
+                
+                // Get user info
+                try {
+                    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                        headers: {
+                            'Authorization': `Bearer ${gapi.client.getToken().access_token}`
+                        }
+                    });
+                    const userInfo = await userInfoResponse.json();
+                    
+                    // Update UI with user info
+                    document.getElementById('userName').textContent = userInfo.name || 'User';
+                    document.getElementById('userEmail').textContent = userInfo.email || '';
+                    document.getElementById('userAvatar').src = userInfo.picture || 'https://ui-avatars.com/api/?name=User&background=6366f1&color=fff';
+                    
+                    // Show dashboard
+                    loginPage.style.display = 'none';
+                    dashboard.classList.add('active');
+                    
+                    showToast('Successfully signed in!', 'success');
+                    
+                    // Fetch emails
+                    await fetchEmails();
+                } catch (error) {
+                    console.error('Error getting user info:', error);
+                    showToast('Error getting user information', 'error');
+                }
+            };
+
+            if (gapi.client.getToken() === null) {
+                tokenClient.requestAccessToken({ prompt: 'consent' });
+            } else {
+                tokenClient.requestAccessToken({ prompt: '' });
+            }
+        }
+
+        function handleSignoutClick() {
+            const token = gapi.client.getToken();
+            if (token !== null) {
+                google.accounts.oauth2.revoke(token.access_token);
+                gapi.client.setToken('');
+            }
+            
+            // Reset UI
+            dashboard.classList.remove('active');
+            loginPage.style.display = 'flex';
+            emails = [];
+            emailList.innerHTML = '';
+            
+            showToast('Signed out successfully', 'info');
+        }
+
+        // ============================================
+        // EMAIL FETCHING
+        // ============================================
+        async function fetchEmails() {
+            showLoading(true);
+            
+            try {
+                // Fetch list of messages
+                const response = await gapi.client.gmail.users.messages.list({
+                    'userId': 'me',
+                    'maxResults': 50,
+                    'labelIds': ['INBOX']
+                });
+
+                const messages = response.result.messages || [];
+                
+                if (messages.length === 0) {
+                    showEmpty(true);
+                    return;
+                }
+
+                // Fetch full details for each message
+                const emailPromises = messages.map(msg => 
+                    gapi.client.gmail.users.messages.get({
+                        'userId': 'me',
+                        'id': msg.id,
+                        'format': 'metadata',
+                        'metadataHeaders': ['From', 'Subject', 'Date']
+                    })
+                );
+
+                const emailResponses = await Promise.all(emailPromises);
+                
+                emails = emailResponses.map(res => {
+                    const msg = res.result;
+                    const headers = msg.payload.headers;
+                    
+                    const getHeader = (name) => {
+                        const header = headers.find(h => h.name.toLowerCase() === name.toLowerCase());
+                        return header ? header.value : '';
+                    };
+
+                    const fromHeader = getHeader('From');
+                    const fromMatch = fromHeader.match(/^(.+?)\s*<(.+?)>$/) || [null, fromHeader, fromHeader];
+                    
+                    // AI categorization simulation (in production, you'd use a real AI service)
+                    const category = categorizeEmail(getHeader('Subject'), msg.snippet);
+                    
+                    return {
+                        id: msg.id,
+                        threadId: msg.threadId,
+                        from: fromMatch[1].replace(/"/g, ''),
+                        email: fromMatch[2] || fromHeader,
+                        subject: getHeader('Subject') || '(No Subject)',
+                        snippet: msg.snippet,
+                        date: new Date(parseInt(msg.internalDate)),
+                        unread: msg.labelIds?.includes('UNREAD') || false,
+                        starred: msg.labelIds?.includes('STARRED') || false,
+                        category: category,
+                        labels: msg.labelIds || []
+                    };
+                });
+
+                updateCounts();
+                renderEmails();
+                showLoading(false);
+                
+            } catch (error) {
+                console.error('Error fetching emails:', error);
+                showToast('Error fetching emails. Please try again.', 'error');
+                showLoading(false);
+                showEmpty(true);
+            }
+        }
+
+        // ============================================
+        // AI CATEGORIZATION (Simulated)
+        // ============================================
+        function categorizeEmail(subject, snippet) {
+            const text = (subject + ' ' + snippet).toLowerCase();
+            
+            // Priority keywords
+            const importantKeywords = ['urgent', 'important', 'asap', 'deadline', 'critical', 'action required', 'immediate'];
+            const workKeywords = ['meeting', 'project', 'report', 'review', 'schedule', 'team', 'office', 'work', 'colleague', 'manager'];
+            const personalKeywords = ['family', 'friend', 'dinner', 'weekend', 'birthday', 'vacation', 'trip'];
+            const newsletterKeywords = ['newsletter', 'subscribe', 'unsubscribe', 'weekly', 'digest', 'update', 'news'];
+            const socialKeywords = ['linkedin', 'twitter', 'facebook', 'instagram', 'notification', 'mentioned', 'tagged', 'comment'];
+
+            if (importantKeywords.some(k => text.includes(k))) return 'important';
+            if (workKeywords.some(k => text.includes(k))) return 'work';
+            if (personalKeywords.some(k => text.includes(k))) return 'personal';
+            if (newsletterKeywords.some(k => text.includes(k))) return 'newsletter';
+            if (socialKeywords.some(k => text.includes(k))) return 'social';
+            
+            return 'inbox';
+        }
+
+        // ============================================
+        // RENDERING
+        // ============================================
+        function renderEmails() {
+            let filteredEmails = emails;
+            
+            // Apply filter
+            if (currentFilter === 'starred') {
+                filteredEmails = emails.filter(e => e.starred);
+            } else if (currentFilter !== 'inbox') {
+                filteredEmails = emails.filter(e => e.category === currentFilter);
+            }
+
+            // Apply search
+            const searchTerm = searchInput.value.toLowerCase();
+            if (searchTerm) {
+                filteredEmails = filteredEmails.filter(e => 
+                    e.from.toLowerCase().includes(searchTerm) ||
+                    e.subject.toLowerCase().includes(searchTerm) ||
+                    e.snippet.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            if (filteredEmails.length === 0) {
+                showEmpty(true);
+                return;
+            }
+
+            showEmpty(false);
+            
+            emailList.innerHTML = filteredEmails.map((email, index) => `
+                <div class="email-item ${email.unread ? 'unread' : ''}" data-id="${email.id}" style="animation-delay: ${index * 0.05}s">
+                    <div class="email-checkbox" data-id="${email.id}"></div>
+                    <div class="email-star ${email.starred ? 'starred' : ''}" data-id="${email.id}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${email.starred ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                    </div>
+                    <div class="email-avatar" style="background: ${getAvatarColor(email.from)}">
+                        ${email.from.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="email-body">
+                        <div class="email-header">
+                            <span class="email-sender">${escapeHtml(email.from)}</span>
+                            <span class="email-time">${formatDate(email.date)}</span>
+                        </div>
+                        <div class="email-subject">${escapeHtml(email.subject)}</div>
+                        <div class="email-preview">${escapeHtml(email.snippet)}</div>
+                        <div class="email-tags">
+                            ${email.category !== 'inbox' ? `<span class="email-tag ${email.category}">${email.category}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            emailList.classList.remove('hidden');
+            
+            // Add event listeners
+            document.querySelectorAll('.email-star').forEach(star => {
+                star.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleStar(star.dataset.id);
+                });
+            });
+
+            document.querySelectorAll('.email-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    checkbox.classList.toggle('checked');
+                });
+            });
+        }
+
+        function updateCounts() {
+            document.getElementById('inboxCount').textContent = emails.length;
+            document.getElementById('starredCount').textContent = emails.filter(e => e.starred).length;
+            document.getElementById('importantCount').textContent = emails.filter(e => e.category === 'important').length;
+            document.getElementById('workCount').textContent = emails.filter(e => e.category === 'work').length;
+            document.getElementById('personalCount').textContent = emails.filter(e => e.category === 'personal').length;
+            document.getElementById('newsletterCount').textContent = emails.filter(e => e.category === 'newsletter').length;
+            document.getElementById('socialCount').textContent = emails.filter(e => e.category === 'social').length;
+        }
+
+        // ============================================
+        // UTILITIES
+        // ============================================
+        function showLoading(show) {
+            loadingState.classList.toggle('hidden', !show);
+            emailList.classList.toggle('hidden', show);
+        }
+
+        function showEmpty(show) {
+            emptyState.classList.toggle('hidden', !show);
+            emailList.classList.toggle('hidden', show);
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <svg class="toast-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    ${type === 'success' ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>' : ''}
+                    ${type === 'error' ? '<circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>' : ''}
+                    ${type === 'info' ? '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>' : ''}
+                </svg>
+                <span class="toast-message">${message}</span>
+            `;
+            toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'toastIn 0.3s ease-out reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function formatDate(date) {
+            const now = new Date();
+            const diff = now - date;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            
+            if (days === 0) {
+                return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            } else if (days === 1) {
+                return 'Yesterday';
+            } else if (days < 7) {
+                return date.toLocaleDateString('en-US', { weekday: 'short' });
+            } else {
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }
+        }
+
+        function getAvatarColor(name) {
+            const colors = [
+                '#6366f1', '#8b5cf6', '#ec4899', '#ef4444', 
+                '#f59e0b', '#22c55e', '#14b8a6', '#3b82f6'
+            ];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+                hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return colors[Math.abs(hash) % colors.length];
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function toggleStar(emailId) {
+            const email = emails.find(e => e.id === emailId);
+            if (email) {
+                email.starred = !email.starred;
+                updateCounts();
+                renderEmails();
+            }
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+        googleSignInBtn.addEventListener('click', handleAuthClick);
+        logoutBtn.addEventListener('click', handleSignoutClick);
+
+        refreshBtn.addEventListener('click', async () => {
+            refreshBtn.style.animation = 'spin 1s linear infinite';
+            await fetchEmails();
+            setTimeout(() => {
+                refreshBtn.style.animation = '';
+            }, 1000);
+            showToast('Emails refreshed!', 'success');
+        });
+
+        organizeBtn.addEventListener('click', () => {
+            showToast('AI is organizing your emails...', 'info');
+            setTimeout(() => {
+                emails.forEach(email => {
+                    email.category = categorizeEmail(email.subject, email.snippet);
+                });
+                updateCounts();
+                renderEmails();
+                showToast('Emails organized successfully!', 'success');
+            }, 1500);
+        });
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                navItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                currentFilter = item.dataset.filter;
+                sectionTitle.textContent = item.querySelector('.nav-item-text')?.textContent || 'All Emails';
+                renderEmails();
+            });
+        });
+
+        searchInput.addEventListener('input', () => {
+            renderEmails();
+        });
+
+        document.getElementById('selectAllBtn').addEventListener('click', () => {
+            const checkboxes = document.querySelectorAll('.email-checkbox');
+            const allChecked = Array.from(checkboxes).every(cb => cb.classList.contains('checked'));
+            checkboxes.forEach(cb => cb.classList.toggle('checked', !allChecked));
+        });
+    </script>
+
+    <!-- Load Google APIs -->
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+</body>
+</html>
